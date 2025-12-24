@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { managerApi } from '@/lib/api';
+import { managerApi, Manager } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +26,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Plus, Trash2, Loader2, UserCircle, Shield } from 'lucide-react';
+import { Users, Plus, Trash2, Loader2, UserCircle, Shield, Search, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function Managers() {
   const { t } = useTranslation();
   const { isSuperAdmin } = useAuth();
   
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -42,8 +45,30 @@ export default function Managers() {
     third_name: '',
     username: '',
     password: '',
-    deleteUsername: '',
   });
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      fetchManagers();
+    }
+  }, [isSuperAdmin]);
+
+  const fetchManagers = async () => {
+    try {
+      const response = await managerApi.getAll();
+      if (response.success) {
+        setManagers(response.data || []);
+      } else {
+        console.error('Failed to fetch managers:', response.message);
+        toast.error(response.message || 'Failed to load managers');
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch managers:', error);
+      toast.error(error.response?.data?.message || 'Failed to load managers');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddManager = async () => {
     const { first_name, second_name, third_name, username, password } = formData;
@@ -72,8 +97,8 @@ export default function Managers() {
           third_name: '',
           username: '',
           password: '',
-          deleteUsername: '',
         });
+        fetchManagers(); // Refresh the list
       } else {
         toast.error(response.message);
       }
@@ -84,29 +109,38 @@ export default function Managers() {
     }
   };
 
-  const handleDeleteManager = async () => {
-    if (!formData.deleteUsername.trim()) {
-      toast.error('Please enter the username');
-      return;
-    }
-
-    setIsSubmitting(true);
+  const handleDeleteManager = async (username: string) => {
     try {
-      const response = await managerApi.delete(formData.deleteUsername);
+      const response = await managerApi.delete(username);
       
       if (response.success) {
         toast.success(response.message);
-        setDeleteDialogOpen(false);
-        setFormData({ ...formData, deleteUsername: '' });
+        fetchManagers(); // Refresh the list
       } else {
         toast.error(response.message);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete manager');
-    } finally {
-      setIsSubmitting(false);
     }
   };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return null;
+      return format(date, 'MMM dd, yyyy');
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const filteredManagers = managers.filter(manager =>
+    manager.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    manager.second_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    manager.third_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    manager.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!isSuperAdmin) {
     return (
@@ -199,44 +233,105 @@ export default function Managers() {
               </div>
             </DialogContent>
           </Dialog>
-
-          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('managers.deleteManager')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('managers.deleteManager')}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Enter the username of the manager you want to delete.
-                </p>
-                <div className="space-y-2">
-                  <Label>{t('managers.username')}</Label>
-                  <Input
-                    value={formData.deleteUsername}
-                    onChange={(e) => setFormData({ ...formData, deleteUsername: e.target.value })}
-                    placeholder="Manager username"
-                  />
-                </div>
-                <Button
-                  onClick={handleDeleteManager}
-                  variant="destructive"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('common.delete')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
+
+      {/* Search */}
+      <div className="flex gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search managers..."
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Managers List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">All Managers ({filteredManagers.length})</h3>
+          </div>
+          
+          {filteredManagers.length === 0 ? (
+            <Card className="glass-card p-12 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">
+                {searchTerm ? 'No managers found matching your search.' : 'No managers created yet.'}
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredManagers.map((manager, index) => (
+                <motion.div
+                  key={manager.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="glass-card p-6 hover:shadow-lg transition-all">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <UserCircle className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold truncate">
+                          {manager.first_name} {manager.second_name}
+                          {manager.third_name && ` ${manager.third_name}`}
+                        </h4>
+                        <p className="text-sm text-muted-foreground truncate">
+                          @{manager.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Role: {manager.role}
+                        </p>
+                        {manager.createdAt && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(manager.createdAt)}
+                          </p>
+                        )}
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Manager</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete manager "{manager.first_name} {manager.second_name}" (@{manager.username})? 
+                              This action cannot be undone and they will lose all access immediately.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteManager(manager.username)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete Manager
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -270,10 +365,10 @@ export default function Managers() {
               <h3 className="text-xl font-semibold mb-2">Remove Manager</h3>
               <p className="text-muted-foreground mb-4">
                 Remove managers who no longer need access to the system.
-                You need to know their username to delete them.
+                Click the delete button on any manager card above.
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Requires exact username</li>
+                <li>• Instant confirmation dialog</li>
                 <li>• Action cannot be undone</li>
                 <li>• All access is revoked immediately</li>
               </ul>

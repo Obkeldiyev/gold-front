@@ -2,15 +2,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { balanceApi, branchesApi, Balance, Branch } from '@/lib/api';
+import { balanceApi, branchesApi, managerApi, Balance, Branch, Manager } from '@/lib/api';
 import { 
   Wallet, 
   Building2, 
   TrendingUp, 
   TrendingDown,
   ArrowUpRight,
-  ArrowDownRight,
-  Sparkles,
+  Users,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,21 +17,35 @@ import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isAuthenticated, isLoading: authLoading } = useAuth();
   const [balance, setBalance] = useState<Balance | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Only fetch data when auth is confirmed and not loading
+    if (isAuthenticated && !authLoading) {
+      console.log('Dashboard: Auth confirmed, fetching data...');
+      fetchData();
+    } else if (!authLoading && !isAuthenticated) {
+      console.log('Dashboard: Not authenticated, skipping data fetch');
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const fetchData = async () => {
     try {
+      console.log('Dashboard: Fetching data...');
+      
       const [balanceRes, branchesRes] = await Promise.all([
         balanceApi.getBalance(),
         branchesApi.getAll(),
       ]);
+      
+      console.log('Dashboard: API responses:', { 
+        balanceSuccess: balanceRes.success, 
+        branchesSuccess: branchesRes.success 
+      });
       
       if (balanceRes.success && balanceRes.data?.[0]) {
         setBalance(balanceRes.data[0]);
@@ -40,8 +53,17 @@ export default function Dashboard() {
       if (branchesRes.success) {
         setBranches(branchesRes.data || []);
       }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+    } catch (error: any) {
+      console.error('Dashboard: Failed to fetch data:', {
+        message: error.message,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // Don't show error toast for auth errors since they'll redirect
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
+        // You can add a toast here if needed
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,34 +84,27 @@ export default function Dashboard() {
       value: formatNumber(balance?.balance || 0),
       suffix: t('common.gr'),
       icon: Wallet,
-      trend: '+12.5%',
-      trendUp: true,
       gradient: 'from-amber-500 to-orange-600',
-    },
-    {
-      title: t('dashboard.totalBranches'),
-      value: branches.length,
-      icon: Building2,
-      trend: '+2',
-      trendUp: true,
-      gradient: 'from-emerald-500 to-teal-600',
     },
     {
       title: 'Total Branch Balance',
       value: formatNumber(totalBranchBalance),
       suffix: t('common.gr'),
       icon: TrendingUp,
-      trend: '+8.2%',
-      trendUp: true,
       gradient: 'from-blue-500 to-indigo-600',
     },
     {
-      title: 'Active Operations',
-      value: '24',
-      icon: Sparkles,
-      trend: '+5',
-      trendUp: true,
-      gradient: 'from-purple-500 to-pink-600',
+      title: 'Total Company Balance',
+      value: formatNumber((balance?.balance || 0) + totalBranchBalance),
+      suffix: t('common.gr'),
+      icon: Wallet,
+      gradient: 'from-purple-500 to-violet-600',
+    },
+    {
+      title: t('dashboard.totalBranches'),
+      value: branches.length,
+      icon: Building2,
+      gradient: 'from-emerald-500 to-teal-600',
     },
   ];
 
@@ -159,15 +174,6 @@ export default function Dashboard() {
                       {stat.suffix && (
                         <span className="text-lg text-muted-foreground">{stat.suffix}</span>
                       )}
-                    </div>
-                    <div className={`flex items-center gap-1 text-sm ${stat.trendUp ? 'text-success' : 'text-destructive'}`}>
-                      {stat.trendUp ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
-                      )}
-                      <span>{stat.trend}</span>
-                      <span className="text-muted-foreground">this month</span>
                     </div>
                   </div>
                   <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient}`}>
@@ -283,9 +289,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: t('branches.addBranch'), icon: Building2, path: '/branches', color: 'from-blue-500 to-indigo-600' },
-              { label: t('managers.addManager'), icon: TrendingUp, path: '/managers', color: 'from-emerald-500 to-teal-600' },
-              { label: t('branches.transfer'), icon: ArrowUpRight, path: '/branches', color: 'from-amber-500 to-orange-600' },
-              { label: t('profile.updateProfile'), icon: Sparkles, path: '/profile', color: 'from-purple-500 to-pink-600' },
+              { label: t('managers.addManager'), icon: Users, path: '/managers', color: 'from-emerald-500 to-teal-600' },
+              { label: 'Add Income', icon: TrendingUp, path: '/balance', color: 'from-green-500 to-emerald-600' },
+              { label: 'Add Outcome', icon: TrendingDown, path: '/balance', color: 'from-red-500 to-pink-600' },
             ].map((action, index) => {
               const Icon = action.icon;
               return (

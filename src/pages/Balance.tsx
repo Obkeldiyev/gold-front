@@ -21,8 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Wallet, TrendingUp, TrendingDown, Loader2, Plus, Minus } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Loader2, Plus, Minus, Calendar, Search, Upload, X } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function BalancePage() {
   const { t } = useTranslation();
@@ -31,10 +38,14 @@ export default function BalancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [incomeDialogOpen, setIncomeDialogOpen] = useState(false);
   const [outcomeDialogOpen, setOutcomeDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
   // Form states
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState('completed');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -55,6 +66,39 @@ export default function BalancePage() {
     }
   };
 
+  const resetForm = () => {
+    setAmount('');
+    setStatus('completed');
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleIncome = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error('Please enter a valid amount');
@@ -66,19 +110,28 @@ export default function BalancePage() {
       const response = await balanceApi.addIncome(
         parseFloat(amount),
         status,
-        balance?.id || 1
+        balance?.id || 1,
+        selectedImage || undefined
       );
       
       if (response.success) {
         toast.success('Income added successfully');
         setIncomeDialogOpen(false);
-        setAmount('');
+        resetForm();
         fetchBalance();
       } else {
         toast.error(response.message || 'Failed to add income');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add income');
+      console.error('Income error:', error);
+      // More specific error handling
+      if (error.response?.status === 409) {
+        toast.error('Something went wrong with the balance operation');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        toast.error('You are not authorized to perform this action');
+      } else {
+        toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -95,21 +148,59 @@ export default function BalancePage() {
       const response = await balanceApi.addOutcome(
         parseFloat(amount),
         status,
-        balance?.id || 1
+        balance?.id || 1,
+        selectedImage || undefined
       );
       
       if (response.success) {
         toast.success('Outcome added successfully');
         setOutcomeDialogOpen(false);
-        setAmount('');
+        resetForm();
         fetchBalance();
       } else {
         toast.error(response.message || 'Failed to add outcome');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add outcome');
+      console.error('Outcome error:', error);
+      // More specific error handling
+      if (error.response?.status === 409) {
+        toast.error('Something went wrong with the balance operation');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        toast.error('You are not authorized to perform this action');
+      } else {
+        toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const filteredIncomes = (balance?.incomes || []).filter(income => {
+    const matchesSearch = searchTerm === '' || 
+      income.amount.toString().includes(searchTerm) ||
+      income.status.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || income.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const filteredOutcomes = (balance?.outcomes || []).filter(outcome => {
+    const matchesSearch = searchTerm === '' || 
+      outcome.amount.toString().includes(searchTerm) ||
+      outcome.status.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || outcome.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return <span className="status-completed">Completed</span>;
+      case 'pending':
+        return <span className="status-pending">Pending</span>;
+      case 'failed':
+        return <span className="status-failed">Failed</span>;
+      default:
+        return <span className="status-pending">{status}</span>;
     }
   };
 
@@ -118,6 +209,17 @@ export default function BalancePage() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No date';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return format(date, 'MMM dd, yyyy HH:mm');
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   if (isLoading) {
@@ -144,7 +246,12 @@ export default function BalancePage() {
         </div>
         {isSuperAdmin && (
           <div className="flex gap-3">
-            <Dialog open={incomeDialogOpen} onOpenChange={setIncomeDialogOpen}>
+            <Dialog open={incomeDialogOpen} onOpenChange={(open) => {
+              setIncomeDialogOpen(open);
+              if (!open) {
+                resetForm();
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="bg-success hover:bg-success/90">
                   <Plus className="mr-2 h-4 w-4" />
@@ -179,6 +286,50 @@ export default function BalancePage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Attach Image (Optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="income-image-upload"
+                      />
+                      <Label
+                        htmlFor="income-image-upload"
+                        className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {selectedImage ? selectedImage.name : 'Choose image'}
+                      </Label>
+                      {selectedImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedImage(null);
+                            setImagePreview(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full max-w-xs h-32 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button 
                     onClick={handleIncome} 
                     className="w-full bg-success hover:bg-success/90"
@@ -191,7 +342,12 @@ export default function BalancePage() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={outcomeDialogOpen} onOpenChange={setOutcomeDialogOpen}>
+            <Dialog open={outcomeDialogOpen} onOpenChange={(open) => {
+              setOutcomeDialogOpen(open);
+              if (!open) {
+                resetForm();
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button variant="destructive">
                   <Minus className="mr-2 h-4 w-4" />
@@ -226,6 +382,50 @@ export default function BalancePage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Attach Image (Optional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="outcome-image-upload"
+                      />
+                      <Label
+                        htmlFor="outcome-image-upload"
+                        className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {selectedImage ? selectedImage.name : 'Choose image'}
+                      </Label>
+                      {selectedImage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedImage(null);
+                            setImagePreview(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full max-w-xs h-32 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button 
                     onClick={handleOutcome} 
                     className="w-full"
@@ -296,6 +496,140 @@ export default function BalancePage() {
         {/* Decorative elements */}
         <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+      </Card>
+
+      {/* Incomes and Outcomes History */}
+      <Card className="glass-card p-6">
+        <Tabs defaultValue="incomes" className="w-full">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="incomes" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Incomes ({balance?.incomes?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="outcomes" className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Outcomes ({balance?.outcomes?.length || 0})
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Filters */}
+            <div className="flex gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search..."
+                  className="pl-10 w-48"
+                />
+              </div>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Incomes Tab */}
+          <TabsContent value="incomes" className="space-y-4">
+            {filteredIncomes.length === 0 ? (
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm || selectedStatus !== 'all' ? 'No incomes match your filters.' : 'No incomes recorded yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredIncomes.map((income, index) => (
+                  <motion.div
+                    key={income.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="glass-card p-4 hover:shadow-md transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                            <TrendingUp className="h-5 w-5 text-success" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-success">
+                              +{formatNumber(income.amount)} {t('common.gr')}
+                            </p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(income.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {getStatusBadge(income.status)}
+                          <p className="text-xs text-muted-foreground mt-1">ID: #{income.id}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Outcomes Tab */}
+          <TabsContent value="outcomes" className="space-y-4">
+            {filteredOutcomes.length === 0 ? (
+              <div className="text-center py-12">
+                <TrendingDown className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm || selectedStatus !== 'all' ? 'No outcomes match your filters.' : 'No outcomes recorded yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredOutcomes.map((outcome, index) => (
+                  <motion.div
+                    key={outcome.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="glass-card p-4 hover:shadow-md transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                            <TrendingDown className="h-5 w-5 text-destructive" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-destructive">
+                              -{formatNumber(outcome.amount)} {t('common.gr')}
+                            </p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(outcome.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {getStatusBadge(outcome.status)}
+                          <p className="text-xs text-muted-foreground mt-1">ID: #{outcome.id}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </Card>
 
       {/* Info cards */}

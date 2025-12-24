@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext"; // Import useAuth
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import "@/lib/i18n";
 
@@ -20,6 +20,42 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
 
+function Root() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            isAuthenticated ?
+              <Navigate to="/dashboard" replace /> :
+              <Navigate to="/login" replace />
+          }
+        />
+
+        {/* Protected routes with layout */}
+        <Route
+          element={<ProtectedRoute />}
+        >
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/balance" element={<Balance />} />
+            <Route path="/branches" element={<Branches />} />
+            <Route path="/managers" element={<Managers />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -27,23 +63,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              
-              <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/balance" element={<Balance />} />
-                <Route path="/branches" element={<Branches />} />
-                <Route path="/managers" element={<Managers />} />
-                <Route path="/transactions" element={<Transactions />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <Root /> {/* Now waits for auth loading */}
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>

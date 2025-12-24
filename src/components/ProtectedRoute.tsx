@@ -1,23 +1,19 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles?: string[];
-}
-
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+export default function ProtectedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center animate-pulse">
-            <span className="text-xl font-bold text-primary-foreground">V</span>
+          <div className="w-16 h-16 rounded-2xl gold-gradient gold-glow animate-glow-pulse flex items-center justify-center">
+            <span className="text-3xl font-bold text-primary-foreground">
+              V
+            </span>
           </div>
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading Vostok...</p>
         </div>
       </div>
     );
@@ -27,9 +23,5 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
+  return <Outlet />;
 }

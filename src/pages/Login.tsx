@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -18,7 +18,7 @@ import {
 
 export default function Login() {
   const { t, i18n } = useTranslation();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   
@@ -26,11 +26,18 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!username.trim() || !password.trim()) {
-      toast.error(t('auth.invalidCredentials'));
+      toast.error(t('auth.invalidCredentials') || 'Please enter username and password');
       return;
     }
 
@@ -38,15 +45,23 @@ export default function Login() {
     
     try {
       const response = await login(username, password);
-      
+
       if (response.success) {
-        toast.success(t('auth.loginSuccess'));
-        navigate('/dashboard');
+        toast.success(t('auth.loginSuccess') || 'Login successful!');
+        // The useEffect above will handle the redirect
       } else {
-        toast.error(response.message || t('auth.invalidCredentials'));
+        toast.error(response.message || t('auth.invalidCredentials') || 'Invalid credentials');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('auth.invalidCredentials'));
+      console.error('Login error:', error);
+      
+      const message = 
+        error.response?.data?.message ||
+        error.message ||
+        t('auth.invalidCredentials') ||
+        'Login failed. Please try again.';
+      
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +89,7 @@ export default function Login() {
           }}
         />
         <motion.div
-          className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
+          className="absolute -lo-40 -left-40 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.2, 0.4, 0.2],
@@ -156,6 +171,7 @@ export default function Login() {
                   placeholder={t('auth.username')}
                   className="pl-10 h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
             </motion.div>
@@ -179,6 +195,7 @@ export default function Login() {
                   placeholder="••••••••"
                   className="pl-10 h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
               </div>
             </motion.div>
@@ -196,10 +213,10 @@ export default function Login() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    {t('auth.loggingIn')}
+                    {t('auth.loggingIn') || 'Logging in...'}
                   </>
                 ) : (
-                  t('auth.loginButton')
+                  t('auth.loginButton') || 'Login'
                 )}
               </Button>
             </motion.div>

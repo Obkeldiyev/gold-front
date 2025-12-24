@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, LoginResponse } from '@/lib/api';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { authApi, LoginResponse } from "@/lib/api";
 
 interface User {
-  role: string;
+  role: "super_admin" | "manager";
 }
 
 interface Tokens {
@@ -23,42 +29,85 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 🔧 normalize backend role
+const normalizeRole = (role: string): User["role"] => {
+  if (role === "super admin") return "super_admin";
+  return role as User["role"];
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<Tokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 🔁 Load auth from localStorage ONCE
   useEffect(() => {
-    // Check for existing tokens on mount
-    const storedTokens = localStorage.getItem('tokens');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedTokens && storedUser) {
-      setTokens(JSON.parse(storedTokens));
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const loadAuth = async () => {
+      try {
+        const storedTokens = localStorage.getItem("tokens");
+        const storedUser = localStorage.getItem("user");
+
+        console.log('Loading auth from localStorage:', { 
+          hasTokens: !!storedTokens, 
+          hasUser: !!storedUser 
+        });
+
+        if (storedTokens && storedUser) {
+          const parsedTokens = JSON.parse(storedTokens);
+          const parsedUser = JSON.parse(storedUser);
+
+          console.log('Parsed auth data:', { 
+            hasAccessToken: !!parsedTokens.access_token, 
+            userRole: parsedUser.role 
+          });
+
+          if (parsedTokens.access_token && parsedUser.role) {
+            setTokens(parsedTokens);
+            setUser(parsedUser);
+            console.log('Auth loaded successfully');
+          } else {
+            console.log('Invalid auth data, clearing localStorage');
+            localStorage.clear();
+          }
+        } else {
+          console.log('No auth data found in localStorage');
+        }
+      } catch (err) {
+        console.error("Auth load error:", err);
+        localStorage.clear();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<LoginResponse> => {
+  // 🔐 LOGIN
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<LoginResponse> => {
     const response = await authApi.login(username, password);
-    
+
     if (response.success && response.tokens && response.role) {
-      const userData: User = { role: response.role };
-      
-      localStorage.setItem('tokens', JSON.stringify(response.tokens));
-      localStorage.setItem('user', JSON.stringify(userData));
-      
+      const userData: User = {
+        role: normalizeRole(response.role),
+      };
+
+      localStorage.setItem("tokens", JSON.stringify(response.tokens));
+      localStorage.setItem("user", JSON.stringify(userData));
+
       setTokens(response.tokens);
       setUser(userData);
     }
-    
+
     return response;
   };
 
+  // 🚪 LOGOUT
   const logout = () => {
-    localStorage.removeItem('tokens');
-    localStorage.removeItem('user');
+    localStorage.clear();
     setTokens(null);
     setUser(null);
   };
@@ -67,20 +116,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     tokens,
     isLoading,
-    isAuthenticated: !!tokens && !!user,
+    isAuthenticated: !!user && !!tokens,
     login,
     logout,
-    isSuperAdmin: user?.role === 'super admin',
-    isManager: user?.role === 'manager',
+    isSuperAdmin: user?.role === "super_admin",
+    isManager: user?.role === "manager",
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
   }
   return context;
 }
