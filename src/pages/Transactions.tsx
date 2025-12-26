@@ -105,7 +105,7 @@ export default function Transactions() {
   // Helper function to build full image URL from filename
   const getImageUrl = (imageName: string | null | undefined): string | null => {
     console.log(imageName);
-    const fullUrl = `http://localhost:9000/uploads/${imageName}`;
+    const fullUrl = `/api/uploads/${imageName}`;
     return fullUrl;
   };
 
