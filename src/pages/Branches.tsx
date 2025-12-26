@@ -474,7 +474,7 @@ export default function Branches() {
         <div>
           <h1 className="text-3xl font-bold mb-2">{t('branches.title')}</h1>
           <p className="text-muted-foreground">
-            Manage branches, transfer gold between them
+            {t('ui.manageBranches')}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -524,22 +524,22 @@ export default function Branches() {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
-                Branch to Branch
+                {t('ui.branchToBranch')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Transfer Between Branches</DialogTitle>
+                <DialogTitle>{t('ui.transferBetweenBranches')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label>From Branch</Label>
+                  <Label>{t('ui.fromBranch')}</Label>
                   <Select
                     value={formData.fromBranchId}
                     onValueChange={(val) => setFormData({ ...formData, fromBranchId: val })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select source branch" />
+                      <SelectValue placeholder={t('ui.selectSourceBranch')} />
                     </SelectTrigger>
                     <SelectContent>
                       {branches.map((branch) => (
@@ -551,13 +551,13 @@ export default function Branches() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>To Branch</Label>
+                  <Label>{t('ui.toBranch')}</Label>
                   <Select
                     value={formData.toBranchId}
                     onValueChange={(val) => setFormData({ ...formData, toBranchId: val })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select destination branch" />
+                      <SelectValue placeholder={t('ui.selectDestinationBranch')} />
                     </SelectTrigger>
                     <SelectContent>
                       {branches
@@ -585,7 +585,7 @@ export default function Branches() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Transfer
+                  {t('ui.transfer')}
                 </Button>
               </div>
             </DialogContent>
@@ -600,15 +600,15 @@ export default function Branches() {
             <Wallet className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground font-medium">Main Balance</p>
+            <p className="text-sm text-muted-foreground font-medium">{t('ui.mainBalance')}</p>
             <p className="text-2xl font-bold gold-text">
               {formatNumber(balance?.balance || 0)} {t('common.gr')}
             </p>
           </div>
           <div className="ml-auto">
-            <p className="text-sm text-muted-foreground">Total Branches: {branches.length}</p>
+            <p className="text-sm text-muted-foreground">{t('ui.totalBranches')}: {branches.length}</p>
             <p className="text-sm text-muted-foreground">
-              Total Branch Balance: {formatNumber(branches.reduce((sum, b) => sum + (b.balance || 0), 0))} {t('common.gr')}
+              {t('ui.totalBranchBalanceLabel')}: {formatNumber(branches.reduce((sum, b) => sum + (b.balance || 0), 0))} {t('common.gr')}
             </p>
           </div>
         </div>
@@ -621,7 +621,7 @@ export default function Branches() {
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search branches..."
+            placeholder={t('ui.searchBranches')}
             className="pl-10"
           />
         </div>
@@ -631,8 +631,8 @@ export default function Branches() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Sort by Name</SelectItem>
-            <SelectItem value="balance">Sort by Balance</SelectItem>
+            <SelectItem value="name">{t('ui.sortByName')}</SelectItem>
+            <SelectItem value="balance">{t('ui.sortByBalance')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -656,7 +656,7 @@ export default function Branches() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{branch.name}</h3>
                     <p className="text-sm text-muted-foreground truncate">
-                      {branch.description || 'No description'}
+                      {branch.description || t('ui.noDescription')}
                     </p>
                     <p className="text-lg font-bold mt-2">
                       {formatNumber(branch.balance || 0)} <span className="text-sm text-muted-foreground">{t('common.gr')}</span>
@@ -676,7 +676,7 @@ export default function Branches() {
                     }}
                   >
                     <ArrowRightLeft className="h-3 w-3 mr-1" />
-                    Transfer
+                    {t('ui.transfer')}
                   </Button>
                   {isSuperAdmin && (
                     <>
@@ -770,20 +770,20 @@ export default function Branches() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Transfer - {selectedBranch?.name}</DialogTitle>
+            <DialogTitle>{t('ui.transfer')} - {selectedBranch?.name}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="get-from-balance" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="get-from-balance">Get from Balance</TabsTrigger>
-              <TabsTrigger value="give-to-balance">Give to Balance</TabsTrigger>
-              <TabsTrigger value="branch-to-branch">Branch to Branch</TabsTrigger>
+              <TabsTrigger value="get-from-balance">{t('ui.getFromBalance')}</TabsTrigger>
+              <TabsTrigger value="give-to-balance">{t('ui.giveToBalance')}</TabsTrigger>
+              <TabsTrigger value="branch-to-branch">{t('ui.branchToBranch')}</TabsTrigger>
             </TabsList>
 
             {/* Get from Balance */}
             <TabsContent value="get-from-balance" className="space-y-4">
               <div className="text-center py-2">
                 <p className="text-sm text-muted-foreground">
-                  Transfer gold from main balance to this branch
+                  {t('ui.transferGoldFromMain')}
                 </p>
               </div>
               <div className="bg-muted/50 p-3 rounded-lg space-y-1">
@@ -868,7 +868,7 @@ export default function Branches() {
             <TabsContent value="give-to-balance" className="space-y-4">
               <div className="text-center py-2">
                 <p className="text-sm text-muted-foreground">
-                  Transfer gold from this branch to main balance
+                  {t('ui.transferGoldToBranch')}
                 </p>
               </div>
               <div className="bg-muted/50 p-3 rounded-lg space-y-1">
@@ -984,7 +984,7 @@ export default function Branches() {
             <TabsContent value="branch-to-branch" className="space-y-4">
               <div className="text-center py-2">
                 <p className="text-sm text-muted-foreground">
-                  Transfer gold from this branch to another branch
+                  {t('ui.transferBetweenBranches')}
                 </p>
               </div>
               <div className="bg-muted/50 p-3 rounded-lg space-y-1">

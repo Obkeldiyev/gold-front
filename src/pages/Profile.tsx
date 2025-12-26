@@ -256,7 +256,7 @@ export default function Profile() {
                   <Input
                     value={profileData.first_name}
                     onChange={(e) => setProfileData({ ...profileData, first_name: e.target.value })}
-                    placeholder="First name"
+                    placeholder={t('ui.firstNameRequired')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -264,7 +264,7 @@ export default function Profile() {
                   <Input
                     value={profileData.second_name}
                     onChange={(e) => setProfileData({ ...profileData, second_name: e.target.value })}
-                    placeholder="Last name"
+                    placeholder={t('ui.lastNameRequired')}
                   />
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default function Profile() {
                   type="password"
                   value={passwordData.oldPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-                  placeholder="Current password"
+                  placeholder={t('profile.oldPassword')}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -303,16 +303,16 @@ export default function Profile() {
                     type="password"
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    placeholder="New password"
+                    placeholder={t('profile.newPassword')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Confirm Password</Label>
+                  <Label>{t('profile.newPassword')} (Confirm)</Label>
                   <Input
                     type="password"
                     value={passwordData.confirmPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                    placeholder="Confirm new password"
+                    placeholder={t('profile.newPassword')}
                   />
                 </div>
               </div>
@@ -341,7 +341,7 @@ export default function Profile() {
                   <Input
                     value={usernameData.oldUsername}
                     onChange={(e) => setUsernameData({ ...usernameData, oldUsername: e.target.value })}
-                    placeholder="Current username"
+                    placeholder={t('profile.oldUsername')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -349,7 +349,7 @@ export default function Profile() {
                   <Input
                     value={usernameData.newUsername}
                     onChange={(e) => setUsernameData({ ...usernameData, newUsername: e.target.value })}
-                    placeholder="New username"
+                    placeholder={t('profile.newUsername')}
                   />
                 </div>
               </div>

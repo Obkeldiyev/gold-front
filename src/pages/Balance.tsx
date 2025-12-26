@@ -194,11 +194,11 @@ export default function BalancePage() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return <span className="status-completed">Completed</span>;
+        return <span className="status-completed">{t('transactions.status.completed')}</span>;
       case 'pending':
-        return <span className="status-pending">Pending</span>;
+        return <span className="status-pending">{t('transactions.status.pending')}</span>;
       case 'failed':
-        return <span className="status-failed">Failed</span>;
+        return <span className="status-failed">{t('transactions.status.failed')}</span>;
       default:
         return <span className="status-pending">{status}</span>;
     }
@@ -212,13 +212,13 @@ export default function BalancePage() {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('transactions.noDate');
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid date';
+      if (isNaN(date.getTime())) return t('transactions.invalidDate');
       return format(date, 'MMM dd, yyyy HH:mm');
     } catch (error) {
-      return 'Invalid date';
+      return t('transactions.invalidDate');
     }
   };
 

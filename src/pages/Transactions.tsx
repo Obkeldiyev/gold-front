@@ -217,15 +217,15 @@ export default function Transactions() {
       );
 
       if (response.success) {
-        toast.success('Transfer completed successfully');
+        toast.success(t('transactions.transferCompleted'));
         setBalanceToBranchForm({ amount: '', branchId: '', isSubmitting: false });
         clearImage('balanceToBranch');
         fetchData(); // Refresh data
       } else {
-        toast.error(response.message || 'Transfer failed');
+        toast.error(response.message || t('transactions.transferFailed'));
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Transfer failed');
+      toast.error(error.response?.data?.message || t('transactions.transferFailed'));
     } finally {
       setBalanceToBranchForm(prev => ({ ...prev, isSubmitting: false }));
     }
@@ -250,15 +250,15 @@ export default function Transactions() {
       );
 
       if (response.success) {
-        toast.success('Transfer completed successfully');
+        toast.success(t('transactions.transferCompleted'));
         setBranchToBalanceForm({ amount: '', branchId: '', ugarAmount: '', reason: '', isSubmitting: false });
         clearImage('branchToBalance');
         fetchData(); // Refresh data
       } else {
-        toast.error(response.message || 'Transfer failed');
+        toast.error(response.message || t('transactions.transferFailed'));
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Transfer failed');
+      toast.error(error.response?.data?.message || t('transactions.transferFailed'));
     } finally {
       setBranchToBalanceForm(prev => ({ ...prev, isSubmitting: false }));
     }
@@ -287,15 +287,15 @@ export default function Transactions() {
       );
 
       if (response.success) {
-        toast.success('Transfer completed successfully');
+        toast.success(t('transactions.transferCompleted'));
         setBranchToBranchForm({ amount: '', fromBranchId: '', toBranchId: '', isSubmitting: false });
         clearImage('branchToBranch');
         fetchData(); // Refresh data
       } else {
-        toast.error(response.message || 'Transfer failed');
+        toast.error(response.message || t('transactions.transferFailed'));
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Transfer failed');
+      toast.error(error.response?.data?.message || t('transactions.transferFailed'));
     } finally {
       setBranchToBranchForm(prev => ({ ...prev, isSubmitting: false }));
     }
@@ -406,12 +406,12 @@ export default function Transactions() {
     };
 
     const labels: Record<string, string> = {
-      INCOME: 'Income',
-      OUTCOME: 'Outcome',
-      BALANCE_TO_BRANCH: 'Balance → Branch',
-      BRANCH_TO_BALANCE: 'Branch → Balance',
-      BRANCH_TO_BRANCH: 'Branch → Branch',
-      UGAR_LOSS: 'Ugar Loss',
+      INCOME: t('transactions.types.income'),
+      OUTCOME: t('transactions.types.outcome'),
+      BALANCE_TO_BRANCH: t('transactions.types.balanceToBranch'),
+      BRANCH_TO_BALANCE: t('transactions.types.branchToBalance'),
+      BRANCH_TO_BRANCH: t('transactions.types.branchToBranch'),
+      UGAR_LOSS: t('transactions.types.ugarLoss'),
     };
 
     return (
@@ -425,12 +425,12 @@ export default function Transactions() {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'success':
-        return <span className="status-completed">Completed</span>;
+        return <span className="status-completed">{t('transactions.status.completed')}</span>;
       case 'pending':
-        return <span className="status-pending">Pending</span>;
+        return <span className="status-pending">{t('transactions.status.pending')}</span>;
       case 'failed':
       case 'error':
-        return <span className="status-failed">Failed</span>;
+        return <span className="status-failed">{t('transactions.status.failed')}</span>;
       default:
         return <span className="status-pending">{status}</span>;
     }
@@ -444,13 +444,13 @@ export default function Transactions() {
   };
 
   const formatDate = (dateString: string, formatStr: string) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('transactions.noDate');
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid date';
+      if (isNaN(date.getTime())) return t('transactions.invalidDate');
       return format(date, formatStr);
     } catch (error) {
-      return 'Invalid date';
+      return t('transactions.invalidDate');
     }
   };
 

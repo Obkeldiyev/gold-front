@@ -87,14 +87,14 @@ export default function Dashboard() {
       gradient: 'from-amber-500 to-orange-600',
     },
     {
-      title: 'Total Branch Balance',
+      title: t('ui.totalBranchBalance'),
       value: formatNumber(totalBranchBalance),
       suffix: t('common.gr'),
       icon: TrendingUp,
       gradient: 'from-blue-500 to-indigo-600',
     },
     {
-      title: 'Total Company Balance',
+      title: t('ui.totalCompanyBalance'),
       value: formatNumber((balance?.balance || 0) + totalBranchBalance),
       suffix: t('common.gr'),
       icon: Wallet,
@@ -137,7 +137,7 @@ export default function Dashboard() {
             {t('dashboard.welcome')} 👋
           </h1>
           <p className="text-muted-foreground">
-            Here's what's happening with your gold trading today.
+            {t('ui.here')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -201,7 +201,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">
-                    Main Portfolio Value
+                    {t('ui.mainPortfolioValue')}
                   </p>
                   <h2 className="text-4xl font-bold gold-text">
                     {formatNumber(balance?.balance || 0)} <span className="text-2xl">{t('common.gr')}</span>
@@ -209,7 +209,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <p className="text-muted-foreground max-w-md">
-                Your central balance for all gold trading operations. Transfer to branches or add income/outcomes.
+                {t('ui.centralBalanceDescription')}
               </p>
             </div>
             
@@ -219,13 +219,13 @@ export default function Dashboard() {
                   <Link to="/balance">
                     <Button variant="outline" className="border-success text-success hover:bg-success/10">
                       <TrendingUp className="mr-2 h-4 w-4" />
-                      Add Income
+                      {t('ui.addIncome')}
                     </Button>
                   </Link>
                   <Link to="/balance">
                     <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
                       <TrendingDown className="mr-2 h-4 w-4" />
-                      Add Outcome
+                      {t('ui.addOutcome')}
                     </Button>
                   </Link>
                 </>
@@ -245,7 +245,7 @@ export default function Dashboard() {
           <h3 className="text-xl font-semibold">{t('branches.allBranches')}</h3>
           <Link to="/branches">
             <Button variant="ghost" className="text-primary">
-              View All
+              {t('ui.viewAll')}
               <ArrowUpRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
@@ -266,7 +266,7 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <h4 className="font-semibold">{branch.name}</h4>
                     <p className="text-sm text-muted-foreground truncate">
-                      {branch.description || 'No description'}
+                      {branch.description || t('ui.noDescription')}
                     </p>
                   </div>
                   <div className="text-right">
@@ -290,8 +290,8 @@ export default function Dashboard() {
             {[
               { label: t('branches.addBranch'), icon: Building2, path: '/branches', color: 'from-blue-500 to-indigo-600' },
               { label: t('managers.addManager'), icon: Users, path: '/managers', color: 'from-emerald-500 to-teal-600' },
-              { label: 'Add Income', icon: TrendingUp, path: '/balance', color: 'from-green-500 to-emerald-600' },
-              { label: 'Add Outcome', icon: TrendingDown, path: '/balance', color: 'from-red-500 to-pink-600' },
+              { label: t('ui.addIncome'), icon: TrendingUp, path: '/balance', color: 'from-green-500 to-emerald-600' },
+              { label: t('ui.addOutcome'), icon: TrendingDown, path: '/balance', color: 'from-red-500 to-pink-600' },
             ].map((action, index) => {
               const Icon = action.icon;
               return (

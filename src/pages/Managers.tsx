@@ -146,8 +146,8 @@ export default function Managers() {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <Shield className="h-16 w-16 text-muted-foreground/50 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
-        <p className="text-muted-foreground">Only Super Admins can access this page.</p>
+        <h2 className="text-xl font-semibold mb-2">{t('ui.accessRestricted')}</h2>
+        <p className="text-muted-foreground">{t('ui.onlySuperAdmins')}</p>
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function Managers() {
         <div>
           <h1 className="text-3xl font-bold mb-2">{t('managers.title')}</h1>
           <p className="text-muted-foreground">
-            Create and manage system managers
+            {t('ui.createManagers')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -181,19 +181,19 @@ export default function Managers() {
               <div className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t('managers.firstName')} *</Label>
+                    <Label>{t('ui.firstNameRequired')} *</Label>
                     <Input
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      placeholder="First name"
+                      placeholder={t('ui.firstNameRequired')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{t('managers.secondName')} *</Label>
+                    <Label>{t('ui.lastNameRequired')} *</Label>
                     <Input
                       value={formData.second_name}
                       onChange={(e) => setFormData({ ...formData, second_name: e.target.value })}
-                      placeholder="Last name"
+                      placeholder={t('ui.lastNameRequired')}
                     />
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export default function Managers() {
                   <Input
                     value={formData.third_name}
                     onChange={(e) => setFormData({ ...formData, third_name: e.target.value })}
-                    placeholder="Middle name (optional)"
+                    placeholder={t('ui.middleNameOptional')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -210,7 +210,7 @@ export default function Managers() {
                   <Input
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    placeholder="Username for login"
+                    placeholder={t('ui.usernameForLogin')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -219,7 +219,7 @@ export default function Managers() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Password"
+                    placeholder={t('ui.password')}
                   />
                 </div>
                 <Button
@@ -243,7 +243,7 @@ export default function Managers() {
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search managers..."
+            placeholder={t('ui.searchManagers')}
             className="pl-10"
           />
         </div>
@@ -257,14 +257,14 @@ export default function Managers() {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">All Managers ({filteredManagers.length})</h3>
+            <h3 className="text-lg font-semibold">{t('ui.allManagers')} ({filteredManagers.length})</h3>
           </div>
           
           {filteredManagers.length === 0 ? (
             <Card className="glass-card p-12 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm ? 'No managers found matching your search.' : 'No managers created yet.'}
+                {searchTerm ? t('ui.noManagersFound') : t('ui.noManagersYet')}
               </p>
             </Card>
           ) : (
@@ -290,7 +290,7 @@ export default function Managers() {
                           @{manager.username}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Role: {manager.role}
+                          {t('ui.role')}: {manager.role}
                         </p>
                         {manager.createdAt && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
@@ -307,19 +307,19 @@ export default function Managers() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Manager</AlertDialogTitle>
+                            <AlertDialogTitle>{t('ui.deleteManager')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete manager "{manager.first_name} {manager.second_name}" (@{manager.username})? 
-                              This action cannot be undone and they will lose all access immediately.
+                              {t('ui.deleteConfirmation')} "{manager.first_name} {manager.second_name}" (@{manager.username})? 
+                              {t('ui.cannotBeUndone')} {t('ui.loseAccessImmediately')}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteManager(manager.username)}
                               className="bg-destructive hover:bg-destructive/90"
                             >
-                              Delete Manager
+                              {t('ui.deleteManager')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -341,16 +341,15 @@ export default function Managers() {
               <Plus className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-2">Create Manager</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('ui.createManager')}</h3>
               <p className="text-muted-foreground mb-4">
-                Add new managers to help manage branches and transactions. 
-                Managers have limited access compared to Super Admins.
+                {t('ui.addManagerDescription')}
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• View balance and branches</li>
-                <li>• Perform branch transactions</li>
-                <li>• Transfer between branches</li>
-                <li>• Cannot create/delete branches</li>
+                <li>• {t('ui.viewMainBalance')}</li>
+                <li>• {t('ui.viewAllBranches')}</li>
+                <li>• {t('ui.transferFromBalanceToBranch')}</li>
+                <li>• {t('ui.cannotTransferSame')}</li>
               </ul>
             </div>
           </div>
@@ -362,15 +361,14 @@ export default function Managers() {
               <Trash2 className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-2">Remove Manager</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('ui.removeManager')}</h3>
               <p className="text-muted-foreground mb-4">
-                Remove managers who no longer need access to the system.
-                Click the delete button on any manager card above.
+                {t('ui.removeManagerDescription')}
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Instant confirmation dialog</li>
-                <li>• Action cannot be undone</li>
-                <li>• All access is revoked immediately</li>
+                <li>• {t('ui.instantConfirmation')}</li>
+                <li>• {t('ui.actionCannotBeUndone')}</li>
+                <li>• {t('ui.allAccessRevoked')}</li>
               </ul>
             </div>
           </div>
@@ -386,55 +384,55 @@ export default function Managers() {
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-2xl font-bold mb-4">Manager Role Permissions</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('ui.managerRolePermissions')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold text-success mb-2">✓ Can Do</h4>
+                <h4 className="font-semibold text-success mb-2">{t('ui.canDo')}</h4>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    View main balance
+                    {t('ui.viewMainBalance')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    View all branches
+                    {t('ui.viewAllBranches')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    Transfer from balance to branch
+                    {t('ui.transferFromBalanceToBranch')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    Transfer from branch to balance
+                    {t('ui.transferFromBranchToBalance')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    Transfer between branches
+                    {t('ui.transferBetweenBranchesPermission')}
                   </li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-destructive mb-2">✗ Cannot Do</h4>
+                <h4 className="font-semibold text-destructive mb-2">{t('ui.cannotDo')}</h4>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    Create/delete branches
+                    {t('ui.createDeleteBranches')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    Add income/outcome to balance
+                    {t('ui.addIncomeOutcome')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    Manage other managers
+                    {t('ui.manageOtherManagers')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    Create super admins
+                    {t('ui.createSuperAdmins')}
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    Access super admin profile
+                    {t('ui.accessSuperAdminProfile')}
                   </li>
                 </ul>
               </div>
